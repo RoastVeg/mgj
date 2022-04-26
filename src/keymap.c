@@ -290,7 +290,7 @@ static PF metami[] = {
 	digit_argument,		/* 7 */
 	digit_argument,		/* 8 */
 	digit_argument,		/* 9 */
-	rescan,			/* : */
+	eval_janet,		/* : */
 	rescan,			/* ; */
 	gotobob,		/* < */
 	rescan,			/* = */

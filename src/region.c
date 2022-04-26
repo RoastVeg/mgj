@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include "def.h"
+#include "janet.h"
 
 #define TIMEOUT 10000
 
@@ -452,6 +453,57 @@ piperegion(int f, int n)
 	region_get_data(&region, text, len);
 
 	return shellcmdoutput(argv, text, len);
+}
+
+/*
+ * Get janet from mini-buffer and execute it
+ */
+int
+janetoutput(char* janet_str, char* const text, int len)
+{
+  struct buffer *bp;
+  int	 ret;
+
+  bp = bfind("*Janet Output*", TRUE);
+  bp->b_flag |= BFREADONLY;
+  if (bclear(bp) != TRUE) {
+    free(text);
+    return (FALSE);
+  }
+
+  janet_init();
+  JanetTable *env = janet_core_env(NULL);
+  JanetBuffer out_buf, err_buf;
+  Janet out = janet_wrap_buffer(&out_buf);
+  Janet err = janet_wrap_buffer(&err_buf);
+  janet_setdyn("out", out);
+  janet_setdyn("err", err);
+  ret = janet_dostring(env, janet_str, "Eval prompt", NULL);
+
+  if (!ret) {
+    eerase();
+    addline(bp, janet_to_string(out));
+    if (lforw(bp->b_headp) == bp->b_headp)
+      addline(bp, "(Janet command succeeded with no output)");
+  } else
+    addline(bp, janet_to_string(err));
+
+  janet_deinit();
+  
+  free(text);
+  return (popbuftop(bp, WNONE));
+}
+
+int
+eval_janet(int f, int n)
+{
+  char *cmd, cmdbuf[NFILEN];
+
+  if ((cmd = eread("Eval: ", cmdbuf, sizeof(cmdbuf),
+		   EFNEW | EFCR)) == NULL || (cmd[0] == '\0'))
+    return (ABORT);
+  
+  return janetoutput(cmd, NULL, 0);
 }
 
 /*

@@ -729,6 +729,7 @@ void		 region_put_data(const char *, int);
 int		 markbuffer(int, int);
 int		 piperegion(int, int);
 int		 shellcommand(int, int);
+int		 eval_janet(int, int);
 int		 pipeio(const char * const, char * const[], char * const, int,
 		     struct buffer *);
 
